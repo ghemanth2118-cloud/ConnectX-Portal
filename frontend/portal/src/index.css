@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Combo&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-urbanist: 'Urbanist', sans-serif;
+  --font-combo: 'Combo', sans-serif;
+  --breakpoint-3xl: 1920px;
+  --color-primary: #00A7F3;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-urbanist);
+  }
+
+  body {
+    background-color: #f7fafe;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
