@@ -68,6 +68,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (credential, role = null) => {
+    try {
+      const payload = { token: credential };
+      if (role) payload.role = role;
+
+      const response = await axiosInstance.post(API_PATHS.AUTH.GOOGLE, payload);
+
+      if (response.status === 202 && response.data.needRole) {
+        return { success: true, needRole: true };
+      }
+
+      const { token, ...user } = response.data;
+
+      localStorage.setItem('accessToken', token);
+      setUser(user);
+      toast.success('Logged in successfully with Google!');
+      return { success: true, user };
+    } catch (error) {
+      console.error("Google Login error:", error);
+      toast.error(error.response?.data?.message || 'Google Login failed');
+      return { success: false, error };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     setUser(null);
@@ -79,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
+    googleLogin,
     register,
     logout,
     setUser

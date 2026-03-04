@@ -15,18 +15,31 @@ exports.updateProfile = async (req, res) => {
       companyName,
       companyDescription,
       companyLogo,
+      employeeCount,
+      hiredCount,
       location,
       education,
       certifications,
       skills,
       about,
+      companyCertificate,
     } = req.body;
 
     const user = req.user; // User is already attached by middleware
 
     // Update fields
     if (name) user.fullName = name;
-    if (avatar) user.profileImage = avatar;
+    // Handle Avatar Replacement and filesystem deletion
+    if (avatar && avatar !== user.profileImage) {
+      if (user.profileImage && user.profileImage.includes('/uploads/')) {
+        const oldFileName = user.profileImage.split('/').pop();
+        const oldFilePath = path.join(__dirname, '../uploads', oldFileName);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+      user.profileImage = avatar;
+    }
     if (resume) user.resume = resume;
     if (location !== undefined) user.location = location;
     if (education !== undefined) user.education = education;
@@ -39,6 +52,8 @@ exports.updateProfile = async (req, res) => {
       if (companyName) user.companyName = companyName;
       if (companyDescription) user.companyDescription = companyDescription;
       if (companyLogo) user.companyLogo = companyLogo;
+      if (companyCertificate !== undefined) user.companyCertificate = companyCertificate;
+      // Removed employeeCount and hiredCount direct overwrite from request to protect correct counts
     }
 
     await user.save();
@@ -53,6 +68,9 @@ exports.updateProfile = async (req, res) => {
       companyName: user.companyName,
       companyDescription: user.companyDescription,
       companyLogo: user.companyLogo,
+      companyCertificate: user.companyCertificate,
+      employeeCount: user.employeeCount,
+      hiredCount: user.hiredCount,
     });
   } catch (error) {
     console.error(error);
@@ -157,6 +175,12 @@ exports.followUser = async (req, res) => {
       currentUser.following.push(userToFollow._id);
       userToFollow.followers.push(currentUser._id);
 
+      // Increment employeeCount dynamically
+      if (userToFollow.role === 'employer') {
+        const currentFollowers = parseInt(userToFollow.employeeCount) || 0;
+        userToFollow.employeeCount = (currentFollowers + 1).toString();
+      }
+
       await currentUser.save();
       await userToFollow.save();
 
@@ -192,6 +216,12 @@ exports.unfollowUser = async (req, res) => {
     if (currentUser.following.includes(userToUnfollow._id)) {
       currentUser.following.pull(userToUnfollow._id);
       userToUnfollow.followers.pull(currentUser._id);
+
+      // Decrement employeeCount dynamically
+      if (userToUnfollow.role === 'employer') {
+        const currentFollowers = parseInt(userToUnfollow.employeeCount) || 0;
+        userToUnfollow.employeeCount = Math.max(0, currentFollowers - 1).toString();
+      }
 
       await currentUser.save();
       await userToUnfollow.save();

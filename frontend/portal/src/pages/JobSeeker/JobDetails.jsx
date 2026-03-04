@@ -3,16 +3,25 @@ import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import axiosInstance from '../../Utils/axiosinstance';
 import { API_PATHS } from '../../Utils/apiPaths';
-import { Briefcase, MapPin, Building2, CircleDollarSign, Calendar, Users, Bookmark, Send, Clock } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Briefcase, MapPin, Building2, CircleDollarSign, Calendar, Users, Bookmark, Send, Clock, X, UploadCloud, FileText, CheckCircle2 } from 'lucide-react';
 import moment from 'moment';
 import toast from 'react-hot-toast';
 
 const JobDetails = () => {
   const { jobId } = useParams();
+  const { user } = useAuth();
   const [job, setJob] = useState(null);
   const [topJobs, setTopJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+
+  // Apply Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [resumeType, setResumeType] = useState('new'); // 'profile' or 'new'
+  const [resumeFile, setResumeFile] = useState(null);
+  const [profileResumeUrl, setProfileResumeUrl] = useState(null);
+  const [fetchingProfile, setFetchingProfile] = useState(false);
 
   useEffect(() => {
     fetchJobDetails();
@@ -41,16 +50,85 @@ const JobDetails = () => {
     }
   };
 
-  const handleApply = async () => {
+  const handleOpenModal = async () => {
+    if (user?._id) {
+      setApplying(true);
+      try {
+        const res = await axiosInstance.get(API_PATHS.USER.GET_PROFILE(user._id));
+        if (res.data && res.data.resume) {
+          // Instant Apply Flow
+          await axiosInstance.post(API_PATHS.APPLICATIONS.APPLY_JOB, {
+            jobId,
+            resume: res.data.resume
+          });
+          toast.success('Successfully applied to job using your Profile Resume!');
+          fetchJobDetails(); // Refresh to update possible capacity
+        } else {
+          // Fallback to Modal for New Resume Upload
+          setResumeType('new');
+          setShowModal(true);
+        }
+      } catch (err) {
+        console.error("Error during application process:", err);
+        // Error could be from get profile OR from apply_job (e.g. already applied)
+        if (err.response?.data?.message) {
+          toast.error(err.response.data.message);
+        } else {
+          toast.error("Failed to apply. Please try again.");
+          setShowModal(true); // show modal as fallback just in case
+        }
+      } finally {
+        setApplying(false);
+      }
+    } else {
+      toast.error("Please login to apply.");
+    }
+  };
+
+  const handleConfirmApply = async () => {
+    if (resumeType === 'new' && !resumeFile) {
+      toast.error("Please select a resume file to upload.");
+      return;
+    }
+
     setApplying(true);
     try {
-      await axiosInstance.post(API_PATHS.APPLICATIONS.APPLY_JOB, { jobId });
+      let finalResumeUrl = profileResumeUrl;
+
+      if (resumeType === 'new' && resumeFile) {
+        // Upload the new resume
+        const formData = new FormData();
+        formData.append('file', resumeFile);
+        const uploadRes = await axiosInstance.post(API_PATHS.IMAGE.UPLOAD_FILE, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        finalResumeUrl = uploadRes.data.fileUrl;
+      }
+
+      await axiosInstance.post(API_PATHS.APPLICATIONS.APPLY_JOB, {
+        jobId,
+        resume: finalResumeUrl
+      });
+
       toast.success('Successfully applied to job!');
+      setShowModal(false);
+      setResumeFile(null); // Reset for future applications
       fetchJobDetails(); // Refresh to update possible capacity
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to apply.');
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size should be less than 5MB");
+        return;
+      }
+      setResumeFile(file);
     }
   };
 
@@ -109,9 +187,15 @@ const JobDetails = () => {
                 <button onClick={handleSaveJob} className="px-4 py-2 border border-slate-200 text-slate-600 font-bold rounded-xl flex items-center gap-2 hover:bg-slate-50 transition-colors">
                   <Bookmark size={18} /> Save
                 </button>
-                <button onClick={handleApply} disabled={job.isClosed || applying || job.capacity === 0} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-60">
-                  {applying ? <div className="animate-spin border-2 border-white/30 border-t-white rounded-full w-4 h-4" /> : <Send size={18} />}
-                  Apply Now
+                <button onClick={handleOpenModal} disabled={job.isClosed || job.capacity === 0 || applying} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl flex items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-60 min-w-36 justify-center">
+                  {applying ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      Apply Now
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -195,6 +279,99 @@ const JobDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Apply Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+              <h2 className="text-xl font-bold text-slate-900 truncate pr-4">Apply for {job.title}</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+                disabled={applying}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto min-h-0">
+              <p className="text-sm text-slate-600 mb-6 font-medium">Please provide a resume for this application. You can use your saved profile resume or upload a new one.</p>
+
+              {fetchingProfile ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Option: Upload New Resume */}
+                  <div className={`block relative rounded-2xl border-2 transition-all ${resumeType === 'new' ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-200 hover:border-indigo-300'}`}>
+                    <label className="flex items-center justify-between p-4 cursor-pointer">
+                      <input type="radio" name="resumeType" value="new" checked={resumeType === 'new'} onChange={() => setResumeType('new')} className="sr-only" />
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${resumeType === 'new' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                          <UploadCloud size={20} />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">Upload New Resume</h4>
+                          <p className="text-xs text-slate-500">PDF, DOC, DOCX up to 5MB</p>
+                        </div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${resumeType === 'new' ? 'border-indigo-600' : 'border-slate-300'}`}>
+                        {resumeType === 'new' && <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />}
+                      </div>
+                    </label>
+                    <div className="px-4 pb-4">
+                      <input
+                        type="file"
+                        id="new-resume-upload"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleFileChange}
+                      />
+                      <label
+                        htmlFor="new-resume-upload"
+                        className="block text-center py-6 px-4 border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-xl cursor-pointer bg-white transition-colors"
+                      >
+                        {resumeFile ? (
+                          <div className="flex flex-col items-center">
+                            <CheckCircle2 size={24} className="text-emerald-500 mb-2" />
+                            <span className="text-sm font-bold text-slate-900 truncate max-w-xs">{resumeFile.name}</span>
+                            <span className="text-xs text-slate-500 mt-1">Ready to upload</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center text-slate-500">
+                            <UploadCloud size={24} className="mb-2 opacity-50 text-indigo-500" />
+                            <span className="text-sm font-semibold">Click to select file</span>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 shrink-0">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors"
+                disabled={applying}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmApply}
+                disabled={applying || fetchingProfile || (resumeType === 'new' && !resumeFile) || (resumeType === 'profile' && !profileResumeUrl)}
+                className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl flex items-center gap-2 hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
+              >
+                {applying ? <div className="animate-spin border-2 border-white/30 border-t-white rounded-full w-4 h-4" /> : <Send size={16} />}
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

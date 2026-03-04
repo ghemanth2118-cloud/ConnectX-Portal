@@ -4,8 +4,8 @@ export const API_PATHS = {
   AUTH: {
     REGISTER: "/api/auth/register",
     LOGIN: "/api/auth/login",
+    GOOGLE: "/api/auth/google",
     GET_PROFILE: "/api/auth/me",
-    UPDATE_PROFILE: "/api/auth/update-profile",
     DELETE_RESUME: "/api/auth/delete-resume",
   },
   DASHBOARD: {
@@ -34,15 +34,18 @@ export const API_PATHS = {
   },
   IMAGE: {
     UPLOAD_IMAGE: "/api/auth/upload-image",
+    UPLOAD_FILE: "/api/auth/upload-file",
   },
   EVENTS: {
     GET_EVENTS: "/api/events",
     CREATE_EVENT: "/api/events",
     GET_EVENT_BY_ID: (id) => `/api/events/${id}`,
+    DELETE_EVENT: (id) => `/api/events/${id}`,
   },
   USER: {
     SEARCH: "/api/user/search",
     GET_PROFILE: (id) => `/api/user/${id}`,
+    UPDATE_PROFILE: "/api/user/profile",
     FOLLOW: (id) => `/api/user/${id}/follow`,
     UNFOLLOW: (id) => `/api/user/${id}/unfollow`,
   },

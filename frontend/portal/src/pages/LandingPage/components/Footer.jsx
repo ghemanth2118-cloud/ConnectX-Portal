@@ -40,8 +40,8 @@ const Footer = () => {
       links: ["Documentation", "Guides", "Support", "API Status"]
     },
     {
-      title: "Company",
-      links: ["About", "Blog", "Careers", "Contact"]
+      title: "Contact Us",
+      links: ["Email: ghemath2118@gmail.com", "Careers", "About"]
     }
   ]
 

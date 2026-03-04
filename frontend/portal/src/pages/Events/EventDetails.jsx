@@ -3,14 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import axiosInstance from '../../Utils/axiosinstance';
 import { API_PATHS } from '../../Utils/apiPaths';
-import { Calendar, MapPin, Users, ArrowLeft, Heart, CreditCard, Share2 } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowLeft, Heart, CreditCard, Share2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
@@ -40,6 +43,24 @@ const EventDetails = () => {
   const toggleWishlist = () => {
     setIsWishlisted(!isWishlisted);
     toast.success(isWishlisted ? "Removed from Wishlist" : "Added to Wishlist");
+  };
+
+  const handleDeleteEvent = async () => {
+    if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+      try {
+        setIsDeleting(true);
+        const res = await axiosInstance.delete(API_PATHS.EVENTS.DELETE_EVENT(id));
+        if (res.data.success) {
+          toast.success("Event deleted successfully");
+          navigate('/events');
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to delete event');
+      } finally {
+        setIsDeleting(false);
+      }
+    }
   };
 
   if (loading) {
@@ -164,8 +185,8 @@ const EventDetails = () => {
                 <button
                   onClick={toggleWishlist}
                   className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold border-2 transition-all ${isWishlisted
-                      ? "border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                    ? "border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                     }`}
                 >
                   <Heart size={20} className={isWishlisted ? "fill-current" : ""} />
@@ -179,6 +200,19 @@ const EventDetails = () => {
                   <span>Share Event</span>
                 </button>
               </div>
+
+              {user && event.creator && user._id === event.creator && (
+                <div className="mt-6 pt-6 border-t border-red-100">
+                  <button
+                    onClick={handleDeleteEvent}
+                    disabled={isDeleting}
+                    className="flex items-center justify-center gap-2 w-full text-red-500 hover:text-red-600 hover:bg-red-50 py-3 rounded-xl font-medium transition-colors border border-red-100 disabled:opacity-50"
+                  >
+                    <Trash2 size={18} />
+                    <span>{isDeleting ? "Deleting..." : "Delete Event"}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

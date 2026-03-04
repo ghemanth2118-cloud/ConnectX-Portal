@@ -9,18 +9,20 @@ import {
   Briefcase,
   CheckCircle,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  User
 } from "lucide-react"
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext';
 import { API_PATHS } from '../../Utils/apiPaths';
+import { GoogleLogin } from '@react-oauth/google';
 
 import { validateEmail } from '../../Utils/helper';
 import axiosInstance from '../../Utils/axiosinstance'
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -33,6 +35,10 @@ const Login = () => {
     showPassword: false,
     errors: {}
   })
+
+  // Google OAuth state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [googleCredential, setGoogleCredential] = useState(null);
 
   // Handle input change
   const handleInputChange = (e) => {
@@ -127,6 +133,48 @@ const Login = () => {
       setFormState(prev => ({ ...prev, loading: false }));
     }
   }
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await googleLogin(credentialResponse.credential);
+
+      if (response.needRole) {
+        setFormState(prev => ({ ...prev, loading: false }));
+        setGoogleCredential(credentialResponse.credential);
+        setShowRoleModal(true);
+      } else if (response.success) {
+        setFormState(prev => ({ ...prev, loading: false, success: true }));
+        setTimeout(() => {
+          window.location.href = response.user?.role === 'employer' ? '/employer-dashboard' : '/dashboard';
+        }, 1500);
+      } else {
+        setFormState(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error(error);
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const finalizeGoogleAuth = async (role) => {
+    try {
+      setShowRoleModal(false);
+      setFormState(prev => ({ ...prev, loading: true }));
+      const response = await googleLogin(googleCredential, role);
+      if (response.success) {
+        setFormState(prev => ({ ...prev, loading: false, success: true }));
+        setTimeout(() => {
+          window.location.href = response.user?.role === 'employer' ? '/employer-dashboard' : '/dashboard';
+        }, 1500);
+      } else {
+        setFormState(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error(error);
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   // Animation variants
   const shakeVariant = {
@@ -282,6 +330,24 @@ const Login = () => {
             </AnimatePresence>
           </motion.button>
 
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm font-medium leading-6">
+              <span className="bg-white px-6 text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => toast.error('Google Sign In failed')}
+              useOneTap
+              shape="pill"
+            />
+          </div>
+
           {/* Sign Up Link */}
           <div className="text-center pt-2">
             <motion.p
@@ -298,6 +364,63 @@ const Login = () => {
           </div>
         </form>
       </motion.div>
+
+      {/* Google Role Selection Modal */}
+      <AnimatePresence>
+        {showRoleModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl"
+            >
+              <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">Select Your Role</h3>
+              <p className="text-gray-500 text-center mb-8">How do you want to use JobHunt?</p>
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => finalizeGoogleAuth('jobSeeker')}
+                  className="w-full flex items-center p-4 border-2 border-blue-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <p className="font-bold text-gray-900">Job Seeker</p>
+                    <p className="text-xs text-gray-500">I want to find a job</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => finalizeGoogleAuth('employer')}
+                  className="w-full flex items-center p-4 border-2 border-purple-100 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                    <Briefcase className="w-6 h-6" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <p className="font-bold text-gray-900">Recruiter</p>
+                    <p className="text-xs text-gray-500">I want to hire talent</p>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowRoleModal(false)}
+                className="mt-6 w-full text-center text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

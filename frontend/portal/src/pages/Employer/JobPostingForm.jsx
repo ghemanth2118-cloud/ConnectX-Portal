@@ -5,9 +5,10 @@ import { CATEGORIES, JOB_TYPES } from '../../Utils/data';
 import axiosInstance from '../../Utils/axiosinstance';
 import { API_PATHS } from '../../Utils/apiPaths';
 import toast from 'react-hot-toast';
-import { Briefcase, MapPin, AlignLeft, Send, CheckCircle2, Eye, Edit2, Building2, CircleDollarSign } from 'lucide-react';
+import { Briefcase, MapPin, AlignLeft, Send, CheckCircle2, Eye, Edit2, Building2, CircleDollarSign, AlertTriangle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 const JobPostingForm = () => {
   const { user } = useAuth();
@@ -76,7 +77,6 @@ const JobPostingForm = () => {
       setIsSubmitting(false);
     }
   };
-
   if (success) {
     return (
       <DashboardLayout activeMenu="post-jobs">
@@ -90,6 +90,54 @@ const JobPostingForm = () => {
           </motion.div>
           <h2 className="text-3xl font-bold text-slate-900 mb-2">Job Posted Successfully!</h2>
           <p className="text-slate-500 mb-6">Your job listing is now live and visible to candidates.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Verification Blocker
+  const isProfileComplete = user?.companyName && user?.companyDescription && user?.companyLogo && user?.companyCertificate;
+
+  if (!isProfileComplete) {
+    return (
+      <DashboardLayout activeMenu="post-jobs">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-lg mx-auto text-center px-4">
+          <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mb-6 shadow-sm border border-amber-200">
+            <AlertTriangle className="w-12 h-12 text-amber-600" />
+          </div>
+          <h2 className="text-3xl font-bold text-slate-900 mb-3">Company Verification Required</h2>
+          <p className="text-slate-600 mb-8 leading-relaxed">
+            To ensure trust and safety for all Job Seekers, you must complete your company profile and upload your <b>Official Registration Certificate</b> before posting any jobs.
+          </p>
+
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 w-full mb-8 text-left shadow-inner">
+            <h3 className="font-bold text-slate-900 mb-4 tracking-wide text-sm uppercase">Missing Information:</h3>
+            <ul className="space-y-3">
+              <li className={`flex items-center gap-3 font-semibold ${user?.companyName ? 'text-emerald-600' : 'text-slate-500'}`}>
+                {user?.companyName ? <CheckCircle2 size={18} /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 ml-0.5" />}
+                Company Name
+              </li>
+              <li className={`flex items-center gap-3 font-semibold ${user?.companyDescription ? 'text-emerald-600' : 'text-slate-500'}`}>
+                {user?.companyDescription ? <CheckCircle2 size={18} /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 ml-0.5" />}
+                Company Description
+              </li>
+              <li className={`flex items-center gap-3 font-semibold ${user?.companyLogo ? 'text-emerald-600' : 'text-slate-500'}`}>
+                {user?.companyLogo ? <CheckCircle2 size={18} /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 ml-0.5" />}
+                Company Logo
+              </li>
+              <li className={`flex items-center gap-3 font-semibold ${user?.companyCertificate ? 'text-emerald-600' : 'text-red-500'}`}>
+                {user?.companyCertificate ? <CheckCircle2 size={18} className="text-emerald-600" /> : <AlertTriangle size={18} />}
+                Registration Certificate (Document)
+              </li>
+            </ul>
+          </div>
+
+          <Link
+            to="/employer-profile"
+            className="flex items-center gap-2 px-8 py-3.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all hover:scale-105"
+          >
+            Complete Profile Now <ArrowRight size={18} />
+          </Link>
         </div>
       </DashboardLayout>
     );

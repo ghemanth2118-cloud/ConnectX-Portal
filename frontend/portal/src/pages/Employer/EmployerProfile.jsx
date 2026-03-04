@@ -13,7 +13,9 @@ import {
   Camera,
   Linkedin,
   Twitter,
-  Edit3
+  Edit3,
+  FileBadge,
+  UploadCloud
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -21,32 +23,74 @@ import axiosInstance from '../../Utils/axiosinstance';
 import { API_PATHS } from '../../Utils/apiPaths';
 
 const EmployerProfilePage = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   // Local state to manage whether we are in "edit" mode or "view" mode
   const [isEditing, setIsEditing] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [formData, setFormData] = useState({
     companyName: user?.companyName || 'Tech Innovations Inc.',
-    tagline: 'Building the future of software, today.',
-    industry: 'Software Development',
-    location: 'San Francisco, CA',
-    website: 'https://techinnovations.example',
-    employeeCount: '250-500',
-    foundedYear: '2015',
-    description: user?.companyDescription || 'We are a fast-growing tech company focused on delivering cutting-edge AI software solutions for enterprise businesses. Our culture is built on innovation, transparency, and a relentless pursuit of excellence.',
+    tagline: 'Building the future of software, today.', // Not in DB yet, but keeping for visual
+    industry: 'Software Development', // Not in DB yet
+    location: user?.location || 'San Francisco, CA',
+    website: 'https://techinnovations.example', // Not in DB yet
+    employeeCount: user?.employeeCount || '0',
+    hiredCount: user?.hiredCount || '0',
+    foundedYear: '2015', // Not in DB yet
+    description: user?.companyDescription || 'We are a fast-growing tech company focused on delivering cutting-edge AI software solutions for enterprise businesses.',
     linkedin: 'linkedin.com/company/techinnovations',
     twitter: '@TechInnovations',
+    companyCertificate: user?.companyCertificate || '',
   });
+
+  const [uploadingCert, setUploadingCert] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    // In a real app, you would make an API call to save this data
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const payload = {
+        companyName: formData.companyName,
+        companyDescription: formData.description,
+        location: formData.location,
+        companyCertificate: formData.companyCertificate,
+      };
+      const res = await axiosInstance.put(API_PATHS.USER.UPDATE_PROFILE, payload);
+      setFormData(prev => ({
+        ...prev,
+        ...payload,
+        description: res.data.companyDescription || prev.description
+      }));
+      if (setUser) {
+        setUser(prev => ({ ...prev, ...res.data }));
+      }
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Failed to save profile:", err);
+    }
+  };
+
+  const handleCertificateUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingCert(true);
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const uploadRes = await axiosInstance.post(API_PATHS.IMAGE.UPLOAD_FILE, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setFormData(prev => ({ ...prev, companyCertificate: uploadRes.data.fileUrl }));
+      toast.success("Certificate uploaded successfully!");
+    } catch (error) {
+      toast.error("Failed to upload certificate");
+    } finally {
+      setUploadingCert(false);
+    }
   };
 
   React.useEffect(() => {
@@ -184,11 +228,14 @@ const EmployerProfilePage = () => {
                     ) : formData.industry}
                   </div>
 
-                  <div className="flex items-center gap-2 text-slate-600 font-medium text-sm bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium text-sm bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
                     <Users size={16} className="text-indigo-500" />
-                    {isEditing ? (
-                      <input type="text" name="employeeCount" value={formData.employeeCount} onChange={handleInputChange} className="bg-transparent outline-none w-24 border-b border-indigo-200" />
-                    ) : `${formData.employeeCount} Employees`}
+                    <span>{formData.employeeCount} Followers</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium text-sm bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
+                    <Award size={16} className="text-indigo-500" />
+                    <span>{formData.hiredCount} Hired</span>
                   </div>
                 </div>
               </div>
@@ -229,6 +276,55 @@ const EmployerProfilePage = () => {
                   {formData.description}
                 </p>
               )}
+            </div>
+
+            {/* Verification & Certificates Section */}
+            <div className={`bg-white rounded-3xl shadow-sm border ${formData.companyCertificate ? 'border-blue-200' : 'border-slate-200'} p-8`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <FileBadge size={20} className="text-blue-600" />
+                  Company Verification
+                </h3>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center gap-6 p-6 rounded-2xl bg-blue-50/50 border border-blue-100">
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center shrink-0 border border-blue-100 text-blue-500">
+                  <FileBadge size={32} />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h4 className="font-bold text-slate-900 mb-1">Official Registration Certificate</h4>
+                  <p className="text-sm text-slate-500 max-w-lg mb-4">
+                    Upload your official company registration certificate. This proves your company is legitimate and builds trust with job seekers. It is required to post jobs.
+                  </p>
+
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="file"
+                        id="cert-upload"
+                        className="hidden"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={handleCertificateUpload}
+                      />
+                      <label
+                        htmlFor="cert-upload"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 cursor-pointer shadow-sm transition-all"
+                      >
+                        {uploadingCert ? <div className="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" /> : <UploadCloud size={16} />}
+                        {formData.companyCertificate ? "Replace Certificate" : "Upload Document"}
+                      </label>
+                    </div>
+                  ) : (
+                    formData.companyCertificate ? (
+                      <a href={formData.companyCertificate} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-all">
+                        View Certificate Document
+                      </a>
+                    ) : (
+                      <span className="inline-block px-3 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-md border border-red-100">Action Required: No Certificate Uploaded</span>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Leadership/Team Section */}

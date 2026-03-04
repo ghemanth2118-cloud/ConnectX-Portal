@@ -19,10 +19,11 @@ import { useAuth } from '../../context/AuthContext';
 import { validateEmail, validatePassword, validateAvatar } from '../../Utils/helper';
 import axiosInstance from '../../Utils/axiosinstance';
 import { API_PATHS } from '../../Utils/apiPaths';
+import { GoogleLogin } from '@react-oauth/google';
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const [formData, setFormData] = useState({
     role: "jobSeeker", // jobSeeker or employer
     fullName: "",
@@ -37,6 +38,10 @@ const SignUp = () => {
     showPassword: false,
     errors: {}
   })
+
+  // Google OAuth state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [googleCredential, setGoogleCredential] = useState(null);
 
   // Validation function
   const validateForm = () => {
@@ -134,6 +139,48 @@ const SignUp = () => {
       console.error("Signup submit error", error);
     }
   }
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await googleLogin(credentialResponse.credential);
+
+      if (response.needRole) {
+        setFormState(prev => ({ ...prev, loading: false }));
+        setGoogleCredential(credentialResponse.credential);
+        setShowRoleModal(true);
+      } else if (response.success) {
+        setFormState(prev => ({ ...prev, loading: false, success: true }));
+        setTimeout(() => {
+          navigate(response.user?.role === 'employer' ? '/employer-dashboard' : '/dashboard');
+        }, 1500);
+      } else {
+        setFormState(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error(error);
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const finalizeGoogleAuth = async (role) => {
+    try {
+      setShowRoleModal(false);
+      setFormState(prev => ({ ...prev, loading: true }));
+      const response = await googleLogin(googleCredential, role);
+      if (response.success) {
+        setFormState(prev => ({ ...prev, loading: false, success: true }));
+        setTimeout(() => {
+          navigate(response.user?.role === 'employer' ? '/employer-dashboard' : '/dashboard');
+        }, 1500);
+      } else {
+        setFormState(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error(error);
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   const shakeVariant = {
     hover: { scale: 1.02 },
@@ -303,7 +350,7 @@ const SignUp = () => {
                         <Briefcase className="w-6 h-6" />
                       </div>
                       <div>
-                        <span className={`block font-bold text-base ${formData.role === "employer" ? "text-purple-900" : "text-gray-900"}`}>Employer</span>
+                        <span className={`block font-bold text-base ${formData.role === "employer" ? "text-purple-900" : "text-gray-900"}`}>Recruiter</span>
                         <span className="text-xs text-gray-500 mt-1 block">Hiring talent</span>
                       </div>
                     </motion.button>
@@ -330,6 +377,24 @@ const SignUp = () => {
                     </div>
                   )}
                 </motion.button>
+
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm font-medium leading-6">
+                    <span className="bg-white px-6 text-gray-500">Or continue with</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => toast.error('Google Sign Up failed')}
+                    useOneTap
+                    shape="pill"
+                  />
+                </div>
 
                 <div className="text-center pt-2">
                   <p className="text-gray-600 font-medium">
@@ -375,6 +440,63 @@ const SignUp = () => {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Google Role Selection Modal */}
+      <AnimatePresence>
+        {showRoleModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl"
+            >
+              <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">Select Your Role</h3>
+              <p className="text-gray-500 text-center mb-8">How do you want to use JobHunt?</p>
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => finalizeGoogleAuth('jobSeeker')}
+                  className="w-full flex items-center p-4 border-2 border-purple-100 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <p className="font-bold text-gray-900">Job Seeker</p>
+                    <p className="text-xs text-gray-500">I want to find a job</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => finalizeGoogleAuth('employer')}
+                  className="w-full flex items-center p-4 border-2 border-pink-100 rounded-2xl hover:border-pink-500 hover:bg-pink-50 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center group-hover:bg-pink-600 group-hover:text-white transition-colors">
+                    <Briefcase className="w-6 h-6" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <p className="font-bold text-gray-900">Recruiter</p>
+                    <p className="text-xs text-gray-500">I want to hire talent</p>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowRoleModal(false)}
+                className="mt-6 w-full text-center text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

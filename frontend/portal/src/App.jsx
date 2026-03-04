@@ -23,6 +23,7 @@ import EventDetails from './pages/Events/EventDetails';
 import Search from './pages/Search/Search';
 import CompanyProfile from './pages/Employer/CompanyProfile';
 import PublicUserProfile from './pages/Jobseeker/PublicUserProfile';
+import Settings from './pages/Settings/Settings';
 
 const App = () => {
   return (
@@ -52,6 +53,8 @@ const App = () => {
           <Route path="/applicants" element={<ApplicationViewer />} />
           <Route path="/company-profile" element={<EmployerProfilePage />} />
         </Route>
+
+        <Route path="/settings" element={<Settings />} />
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />

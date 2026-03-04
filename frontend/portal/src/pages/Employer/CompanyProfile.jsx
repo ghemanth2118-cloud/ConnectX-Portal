@@ -8,7 +8,8 @@ import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
-  Mail
+  Mail,
+  FileBadge
 } from 'lucide-react';
 import moment from 'moment';
 import axiosInstance from '../../Utils/axiosinstance';
@@ -39,7 +40,7 @@ const CompanyProfile = () => {
 
       // Check if current user follows this company
       if (user && companyData.followers) {
-        setIsFollowing(companyData.followers.some(f => f._id === user._id || f === user._id));
+        setIsFollowing(companyData.followers.some(f => (f._id || f) === user._id));
       }
 
       // Fetch jobs posted by this company
@@ -76,8 +77,7 @@ const CompanyProfile = () => {
 
     try {
       if (isFollowing) {
-        await axiosInstance.post(API_PATHS.USER.UNFOLLOW(id));
-        setFollowerCount(prev => prev - 1);
+        setFollowerCount(prev => prev - 1); // Or update from DB if possible
         setIsFollowing(false);
         toast.success(`Unfollowed ${company?.companyName}`);
       } else {
@@ -150,7 +150,8 @@ const CompanyProfile = () => {
                   </h1>
                   <div className="flex items-center gap-4 mt-3 text-slate-500 text-sm">
                     <span className="flex items-center gap-1.5"><MapPin size={16} className="text-slate-400" /> Remote / HQ</span>
-                    <span className="flex items-center gap-1.5"><Users size={16} className="text-slate-400" /> {followerCount} Followers</span>
+                    <span className="flex items-center gap-1.5"><Users size={16} className="text-slate-400" /> {company.employeeCount || followerCount} Followers</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-slate-400" /> {company.hiredCount || 0} Hired</span>
                     <span className="flex items-center gap-1.5"><CalendarDays size={16} className="text-slate-400" /> Joined {moment(company.createdAt).format("YYYY")}</span>
                   </div>
                 </div>
@@ -170,10 +171,21 @@ const CompanyProfile = () => {
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-100">
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">About the Company</h3>
-                <p className="text-slate-600 leading-relaxed max-w-2xl">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-2">About the Company</h3>
+                <p className="text-slate-600 leading-relaxed max-w-2xl mb-6">
                   {company.companyDescription || "This company has not provided a description yet."}
                 </p>
+
+                {company.companyCertificate && (
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      Verification
+                    </h3>
+                    <a href={company.companyCertificate} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 border border-blue-200 shadow-sm transition-all text-sm">
+                      <FileBadge size={16} /> View Official Registration Certificate
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>

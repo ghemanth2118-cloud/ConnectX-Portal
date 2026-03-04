@@ -115,6 +115,16 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
 
+    // Dynamically increment the employer's Hired Tracking Metric
+    if (status.toLowerCase() === 'hired' && app.status.toLowerCase() !== 'hired') {
+      const employer = await require('../models/User').findById(req.user._id);
+      if (employer) {
+        const currentHired = parseInt(employer.hiredCount) || 0;
+        employer.hiredCount = (currentHired + 1).toString();
+        await employer.save();
+      }
+    }
+
     app.status = status;
     await app.save();
 

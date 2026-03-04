@@ -41,6 +41,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    companyCertificate: {
+      type: String,
+      default: "",
+    },
+    employeeCount: {
+      type: String,
+      default: "0",
+    },
+    hiredCount: {
+      type: String,
+      default: "0",
+    },
     location: {
       type: String,
       default: "",

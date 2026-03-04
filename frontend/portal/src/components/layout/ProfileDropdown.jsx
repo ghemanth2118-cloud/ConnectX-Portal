@@ -55,7 +55,13 @@ const ProfileDropdown = ({ user, handleLogout }) => {
               <User size={18} className="text-slate-400 group-hover:text-indigo-500" />
               <span>My Profile</span>
             </button>
-            <button className="w-full px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50 flex items-center gap-3 transition-colors">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/settings');
+              }}
+              className="w-full px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50 flex items-center gap-3 transition-colors"
+            >
               <Settings size={18} className="text-slate-400 group-hover:text-indigo-500" />
               <span>Settings</span>
             </button>

@@ -8,8 +8,11 @@ import {
   MapPin,
   Search,
   Building2,
-  Bookmark
+  Bookmark,
+  Filter
 } from "lucide-react";
+
+const CATEGORIES = ["All Jobs", "Software / Tech", "Electronics (ECE)", "Mechanical (MECH)", "Civil", "Management", "Design", "Marketing", "Data Science"];
 import moment from "moment";
 import { Link } from 'react-router-dom';
 import axiosInstance from '../../Utils/axiosinstance';
@@ -29,6 +32,8 @@ const JobseekerDashboard = () => {
     followingCount: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("All Jobs");
+  const [allJobsList, setAllJobsList] = useState([]);
 
   const fetchDashboardData = async () => {
     try {
@@ -47,8 +52,9 @@ const JobseekerDashboard = () => {
       const followingCount = profileRes.data?.following?.length || 0;
 
       // Fetch top jobs and extract companies
-      const jobsRes = await axiosInstance.get(API_PATHS.JOBS.GET_ALL);
-      const allJobs = jobsRes.data?.jobs || [];
+      const jobsRes = await axiosInstance.get(API_PATHS.JOBS.GET_ALL_JOBS);
+      const allJobs = jobsRes.data?.jobs || jobsRes.data || [];
+      setAllJobsList(allJobs);
 
       const topJobs = [...allJobs]
         .filter(j => !j.isClosed && j.capacity > 0)
@@ -90,6 +96,24 @@ const JobseekerDashboard = () => {
       fetchDashboardData();
     }
   }, [user]);
+
+  const filteredJobs = allJobsList.filter(job => {
+    if (activeCategory === "All Jobs") return true;
+    if (job.category && job.category === activeCategory) return true;
+
+    const title = (job.title || "").toLowerCase();
+
+    if (activeCategory === "Software / Tech") return title.includes("software") || title.includes("tech") || title.includes("developer") || title.includes("cse") || title.includes("it") || title.includes("data") || title.includes("web");
+    if (activeCategory === "Electronics (ECE)") return title.includes("ece") || title.includes("electronics") || title.includes("hardware") || title.includes("circuit") || title.includes("embedded");
+    if (activeCategory === "Mechanical (MECH)") return title.includes("mech") || title.includes("mechanical") || title.includes("automobile") || title.includes("design engineer");
+    if (activeCategory === "Civil") return title.includes("civil") || title.includes("construction") || title.includes("site") || title.includes("architect");
+    if (activeCategory === "Management") return title.includes("manager") || title.includes("product") || title.includes("business") || title.includes("hr") || title.includes("management");
+    if (activeCategory === "Design") return title.includes("design") || title.includes("ui") || title.includes("ux") || title.includes("graphic");
+    if (activeCategory === "Marketing") return title.includes("marketing") || title.includes("seo") || title.includes("sales") || title.includes("content");
+    if (activeCategory === "Data Science") return title.includes("data") || title.includes("science") || title.includes("analytics") || title.includes("machine learning");
+
+    return false;
+  });
 
   if (isLoading) {
     return (
@@ -162,7 +186,7 @@ const JobseekerDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-purple-100 mt-4 relative z-10">
-              <span className="flex items-center gap-1 font-bold">Companies & Employers</span>
+              <span className="flex items-center gap-1 font-bold">Companies & Recruiters</span>
             </div>
           </div>
         </div>
@@ -277,7 +301,7 @@ const JobseekerDashboard = () => {
         {/* Featured Companies */}
         <div className="mb-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Building2 className="text-purple-600" size={20} /> Featured Employers</h3>
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Building2 className="text-purple-600" size={20} /> Featured Recruiters</h3>
             <p className="text-sm text-slate-500">Discover top companies actively hiring</p>
           </div>
 
@@ -300,6 +324,71 @@ const JobseekerDashboard = () => {
               <p className="text-slate-500 text-sm text-center col-span-full">No featured companies right now.</p>
             )}
           </div>
+        </div>
+
+        {/* All Jobs with Categories Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-end mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2"><Briefcase className="text-indigo-600" size={24} /> Explore All Jobs</h3>
+              <p className="text-sm text-slate-500 mt-1">Browse and filter jobs by category</p>
+            </div>
+          </div>
+
+          {/* Categories Filter */}
+          <div className="flex flex-wrap gap-3 mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 px-3 py-2 text-slate-500 font-medium border-r border-slate-200 mr-2 shrink-0">
+              <Filter size={18} />
+              <span>Filter:</span>
+            </div>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeCategory === cat
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                  : 'bg-slate-50 text-slate-600 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700'
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredJobs.length > 0 ? (
+              filteredJobs.slice(0, 12).map(job => (
+                <Link to={`/job/${job._id}`} key={job._id} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all group flex flex-col h-full">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                      <Briefcase size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1">{job.title}</h4>
+                      <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5 line-clamp-1"><Building2 size={14} className="shrink-0" /> {job.company?.companyName || 'Company'}</p>
+                    </div>
+                  </div>
+                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-1 text-slate-500 shrink-0 truncate w-2/3"><MapPin size={14} className="shrink-0" /> {job.location}</span>
+                    <span className="font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-lg shrink-0">View</span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
+                <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-slate-700 mb-1">No Jobs Found</h3>
+                <p className="text-slate-500 text-sm">No jobs matching this category right now.</p>
+              </div>
+            )}
+          </div>
+          {filteredJobs.length > 12 && (
+            <div className="text-center mt-8">
+              <Link to="/search" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 hover:border-indigo-300 text-indigo-600 font-bold rounded-xl transition-all hover:bg-indigo-50">
+                View All {filteredJobs.length} Jobs
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
