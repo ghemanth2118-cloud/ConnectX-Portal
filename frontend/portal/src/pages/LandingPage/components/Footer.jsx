@@ -64,10 +64,8 @@ const Footer = () => {
           {/* Brand Column */}
           <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
             <div className="flex items-center space-x-3">
-              <div className="bg-linear-to-br from-blue-600 to-purple-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
-                <Briefcase className="w-8 h-8 text-white" strokeWidth={1.5} />
-              </div>
-              <span className="text-2xl font-bold tracking-tight">ConnectX</span>
+              <img src="/logo.svg" alt="Nexus Logo" className="w-10 h-10 object-contain" />
+              <span className="text-3xl font-black tracking-tighter bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Nexus</span>
             </div>
             <p className="text-gray-400 leading-relaxed max-w-sm">
               Empowering careers and businesses with advanced AI-driven connections.
@@ -140,7 +138,7 @@ const Footer = () => {
           transition={{ duration: 0.5, delay: 0.7 }}
           className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-sm text-gray-500"
         >
-          <p>© {new Date().getFullYear()} ConnectX. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Nexus. All rights reserved.</p>
           <div className="flex space-x-8">
             <a href="#" className="hover:text-gray-300 transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-gray-300 transition-colors">Terms of Service</a>

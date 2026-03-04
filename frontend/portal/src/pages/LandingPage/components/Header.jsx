@@ -24,10 +24,8 @@ const Header = () => {
       <div className='flex items-center justify-between h-16'>
         {/* logo */}
         <div className='flex items-center space-x-3'>
-          <div className='w-8 h-8 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center'>
-            <Briefcase className='w-5 h-5 text-white' />
-          </div>
-          <span className='text-xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>ConnectX</span>
+          <img src="/logo.svg" alt="Nexus Logo" className="w-8 h-8 object-contain" />
+          <span className='text-2xl font-black bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight'>Nexus</span>
         </div>
         {/* Navigation linkes -hidden on mobile */}
         <nav className="hidden md:flex items-center space-x-8">

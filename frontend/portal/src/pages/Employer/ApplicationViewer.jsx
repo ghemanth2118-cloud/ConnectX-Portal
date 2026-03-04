@@ -75,8 +75,6 @@ const ApplicationViewer = () => {
     }
   };
 
-  // Helper placeholder data since the backend User model might not have rich dummy data yet
-  const dummySkills = ["React", "Node.js", "MongoDB", "Tailwind CSS", "JavaScript ES6+", "Git"];
 
   return (
     <DashboardLayout activeMenu="manage-jobs">
@@ -243,8 +241,7 @@ const ApplicationViewer = () => {
                             <User size={20} className="text-indigo-600" /> About Candidate
                           </h3>
                           <p className="text-slate-600 leading-relaxed bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-inner shadow-slate-100/50">
-                            {selectedApp.applicant?.description ||
-                              "I am a highly motivated professional with a passion for building scalable and efficient solutions. I thrive in collaborative environments and am always eager to learn new technologies and frameworks. With a background in tackling complex technical challenges, I am excited about the opportunity to contribute to innovative projects and drive impactful results."}
+                            {selectedApp.applicant?.about || "No bio provided."}
                           </p>
                         </div>
 
@@ -253,11 +250,15 @@ const ApplicationViewer = () => {
                             <Briefcase size={20} className="text-indigo-600" /> Skills & Expertise
                           </h3>
                           <div className="flex flex-wrap gap-2">
-                            {dummySkills.map((skill, i) => (
-                              <span key={i} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold border border-indigo-100">
-                                {skill}
-                              </span>
-                            ))}
+                            {selectedApp.applicant?.skills && selectedApp.applicant.skills.length > 0 ? (
+                              selectedApp.applicant.skills.map((skill, i) => (
+                                <span key={i} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold border border-indigo-100">
+                                  {skill}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-sm text-slate-500 italic">No skills added.</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -285,7 +286,7 @@ const ApplicationViewer = () => {
                         {/* Public Profile Link */}
                         <div className="bg-white rounded-2xl p-6 border border-slate-200">
                           <h3 className="font-bold text-slate-900 mb-2">Full Profile</h3>
-                          <p className="text-sm text-slate-500 mb-4">View the candidate's complete ConnectX profile.</p>
+                          <p className="text-sm text-slate-500 mb-4">View the candidate's complete Nexus profile.</p>
                           <button
                             onClick={() => window.open(`/user/${selectedApp.applicant?._id}`, '_blank')}
                             className="w-full py-2.5 bg-white border-2 border-slate-200 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 rounded-xl font-bold transition-all"

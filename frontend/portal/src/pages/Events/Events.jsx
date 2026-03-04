@@ -247,7 +247,7 @@ const Events = () => {
                       name="organizer"
                       value={formData.organizer}
                       onChange={handleInputChange}
-                      placeholder="e.g. ConnectX"
+                      placeholder="e.g. Nexus"
                       className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                       required
                     />

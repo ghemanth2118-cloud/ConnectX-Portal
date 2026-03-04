@@ -103,11 +103,9 @@ const DashboardLayout = ({ children, activeMenu }) => {
           {/* Logo Section */}
           <div className="h-20 flex items-center px-8 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-500/20 group-hover:scale-110 transition-transform">
-                <Briefcase size={22} strokeWidth={2.5} />
-              </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
-                ConnectX
+              <img src="/logo.svg" alt="Nexus Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform drop-shadow-sm" />
+              <span className="text-2xl font-black tracking-tight bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+                Nexus
               </span>
             </Link>
             {isMobile && (
