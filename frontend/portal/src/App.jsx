@@ -7,22 +7,22 @@ import { Toaster } from 'react-hot-toast';
 
 import LandingPage from './pages/LandingPage/LandingPage';
 import Login from './pages/Auth/Login';
-import Signup from './pages/Auth/Signup';
+import Signup from './pages/Auth/SignUp';
 import EmployerDashboard from './pages/Employer/EmployerDashboard';
 import ManageJobs from './pages/Employer/ManageJobs';
 import ApplicationViewer from './pages/Employer/ApplicationViewer';
 import EmployerProfilePage from './pages/Employer/EmployerProfile';
 import ProtectedRoute from './routes/ProtectedRoute';
-import JobDetails from './pages/Jobseeker/JobDetails';
-import SavedJobs from './pages/Jobseeker/SavedJobs';
-import UserProfile from './pages/Jobseeker/UserProfile';
-import JobSeekerDashboard from './pages/Jobseeker/JobSeekerDashboard';
+import JobDetails from './pages/JobSeeker/JobDetails';
+import SavedJobs from './pages/JobSeeker/SavedJobs';
+import UserProfile from './pages/JobSeeker/UserProfile';
+import JobSeekerDashboard from './pages/JobSeeker/JobSeekerDashboard';
 import JobPostingForm from './pages/Employer/JobPostingForm';
 import Events from './pages/Events/Events';
 import EventDetails from './pages/Events/EventDetails';
 import Search from './pages/Search/Search';
 import CompanyProfile from './pages/Employer/CompanyProfile';
-import PublicUserProfile from './pages/Jobseeker/PublicUserProfile';
+import PublicUserProfile from './pages/JobSeeker/PublicUserProfile';
 import Settings from './pages/Settings/Settings';
 
 const App = () => {
